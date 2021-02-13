@@ -1,0 +1,25 @@
+- hosts: localhost
+  roles:
+  - role: aws
+
+- hosts: controller
+  roles:
+  - role: controller
+  tasks:
+  - name: "Getting the join command"
+    shell: "kubeadm token  create --print-join-command"
+    register: joincommand
+  - debug:
+       var: joincommand["stdout"]
+  - add_host:
+       name: "linktojoin"
+       link: "{{ joincommand['stdout'] }}"
+
+- hosts: workers
+  roles:
+  - role: worker     
+  tasks:
+  - name: "Joining the master"
+    shell: "{{ hostvars['linktojoin']['link'] }}"        
+  - debug:
+        msg: "Your Kubernetes worker has been successfully connected to Master"          
